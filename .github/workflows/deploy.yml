@@ -9,18 +9,25 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-    - name: Checkout repository
-      uses: actions/checkout@v3
+      # Step 1: Checkout repository
+      - name: Checkout repository
+        uses: actions/checkout@v3
 
-    - name: Set up TeX Live
-      uses: dante-ev/texlive-action@v2
+      # Step 2: Set up TeX Live
+      - name: Install TeX Live
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y texlive-full
 
-    - name: Compile LaTeX document
-      run: |
-        latexmk -pdf -interaction=nonstopmode -output-directory=output main.tex
+      # Step 3: Compile the LaTeX document
+      - name: Compile LaTeX document
+        run: |
+          mkdir -p output
+          latexmk -pdf -interaction=nonstopmode -output-directory=output main.tex
 
-    - name: Deploy to GitHub Pages
-      uses: peaceiris/actions-gh-pages@v3
-      with:
-        github_token: ${{ secrets.GITHUB_TOKEN }}
-        publish_dir: ./output
+      # Step 4: Deploy to GitHub Pages
+      - name: Deploy to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./output
