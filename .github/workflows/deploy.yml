@@ -6,28 +6,63 @@ on:
       - main
 
 jobs:
-  build:
+  install-texlive:
+    name: Install TeX Live
     runs-on: ubuntu-latest
+    outputs:
+      texlive-cache: ${{ steps.cache.outputs.cache-hit }}
     steps:
-      # Step 1: Checkout repository
-      - name: Checkout repository
-        uses: actions/checkout@v3
+      # Step 1: Cache TeX Live to speed up subsequent runs (optional)
+      - name: Cache TeX Live
+        id: cache
+        uses: actions/cache@v3
+        with:
+          path: /usr/local/texlive
+          key: texlive-cache
+          restore-keys: texlive-cache
 
-      # Step 2: Set up TeX Live
+      # Step 2: Install TeX Live if not cached
       - name: Install TeX Live
+        if: steps.cache.outputs.cache-hit != 'true'
         run: |
           sudo apt-get update
           sudo apt-get install -y texlive-full
 
-      # Step 3: Compile the LaTeX document
+  build-latex:
+    name: Build LaTeX
+    needs: install-texlive
+    runs-on: ubuntu-latest
+    steps:
+      # Step 1: Checkout the repository
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      # Step 2: Compile LaTeX document
       - name: Compile LaTeX document
         run: |
           mkdir -p output
           latexmk -pdf -interaction=nonstopmode -output-directory=output main.tex
 
-      # Step 4: Deploy to GitHub Pages
+      # Step 3: Upload artifacts (optional for debugging)
+      - name: Upload compiled PDF
+        uses: actions/upload-artifact@v3
+        with:
+          name: compiled-pdf
+          path: output/*.pdf
+
+  deploy-pages:
+    name: Deploy to GitHub Pages
+    needs: build-latex
+    runs-on: ubuntu-latest
+    steps:
+      # Step 1: Checkout the repository (again, needed for peaceiris actions)
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      # Step 2: Deploy to GitHub Pages
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v3
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: ./output
+          force_orphan: true
