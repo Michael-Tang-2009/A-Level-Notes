@@ -1,4 +1,53 @@
-\documentclass{article}
+\documentclass[12pt]{book}
+
+\usepackage{amsmath}   % for mathematical symbols and equations
+\usepackage{amsfonts}  % for math fonts
+\usepackage{amssymb}   % for extra symbols
+\usepackage{graphicx}  % for including images
+\usepackage{fancyhdr}  % for custom headers/footers
+\usepackage{hyperref}  % for hyperlinks
+\usepackage{tocbibind} % to include the bibliography in the table of contents
+
+% Title and author information
+\title{A-Level Notes for Pearson Edexcel}
+\author{Michael Tang}
+\date{\today}
+
+% Page style
+\pagestyle{fancy}
+\fancyhead[L]{A-Level Notes}
+\fancyhead[C]{}
+\fancyhead[R]{\thepage}
+
 \begin{document}
-Hello, World!
+
+% Title page
+\maketitle
+\newpage
+
+% Table of Contents
+\tableofcontents
+\newpage
+
+% Include the chapters from each subject folder
+\input{Mathematics/MathBook1.tex}
+\input{Mathematics/MathBook2.tex}
+
+\input{Biology/BiologyBook1.tex}
+\input{Biology/BiologyBook2.tex}
+
+\input{Chemistry/ChemistryBook1.tex}
+\input{Chemistry/ChemistryBook2.tex}
+
+\input{Physics/PhysicsBook1.tex}
+\input{Physics/PhysicsBook2.tex}
+
+% Bibliography
+%\chapter*{Bibliography}
+%\addcontentsline{toc}{chapter}{Bibliography}
+%\begin{thebibliography}{9}
+%\bibitem{author1} Author Name. \textit{Book Title}. Publisher, Year.
+%\bibitem{author2} Author Name. \textit{Book Title}. Publisher, Year.
+%\end{thebibliography}
+
 \end{document}
