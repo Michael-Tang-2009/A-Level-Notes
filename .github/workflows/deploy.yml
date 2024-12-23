@@ -4,46 +4,52 @@ on:
   push:
     branches:
       - main
+    paths:
+      - .github/workflows/deploy.yml
+  release:
+    types:
+      - created
 
 jobs:
   install-texlive:
-    name: Install TeX Live
+    name: Install TeX Live and latexmk
     runs-on: ubuntu-latest
-    outputs:
-      texlive-cache: ${{ steps.cache.outputs.cache-hit }}
     steps:
-      # Step 1: Cache TeX Live to speed up subsequent runs (optional)
-      - name: Cache TeX Live
-        id: cache
-        uses: actions/cache@v3
-        with:
-          path: /usr/local/texlive
-          key: texlive-cache
-          restore-keys: texlive-cache
-
-      # Step 2: Install TeX Live if not cached
-      - name: Install TeX Live
-        if: steps.cache.outputs.cache-hit != 'true'
+      - name: Install TeX Live and latexmk
         run: |
           sudo apt-get update
-          sudo apt-get install -y texlive-full
+          sudo apt-get install -y texlive-full latexmk
 
-  build-latex:
-    name: Build LaTeX
-    needs: install-texlive
+      - name: Verify latexmk installation
+        run: |
+          which latexmk
+          latexmk --version
+
+  checkout-repository:
+    name: Checkout repository
     runs-on: ubuntu-latest
     steps:
-      # Step 1: Checkout the repository
       - name: Checkout repository
         uses: actions/checkout@v3
 
-      # Step 2: Compile LaTeX document
+  compile-latex:
+    name: Compile LaTeX
+    runs-on: ubuntu-latest
+    needs: install-texlive  # Ensure LaTeX is installed before compilation
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
       - name: Compile LaTeX document
         run: |
           mkdir -p output
           latexmk -pdf -interaction=nonstopmode -output-directory=output main.tex
 
-      # Step 3: Upload artifacts (optional for debugging)
+  upload-pdf:
+    name: Upload Compiled PDF
+    runs-on: ubuntu-latest
+    needs: compile-latex  # Ensure LaTeX compilation completes before uploading
+    steps:
       - name: Upload compiled PDF
         uses: actions/upload-artifact@v3
         with:
@@ -52,17 +58,16 @@ jobs:
 
   deploy-pages:
     name: Deploy to GitHub Pages
-    needs: build-latex
     runs-on: ubuntu-latest
+    needs: compile-latex  # Ensure LaTeX compilation is done before deploying
     steps:
-      # Step 1: Checkout the repository (again, needed for peaceiris actions)
       - name: Checkout repository
         uses: actions/checkout@v3
 
-      # Step 2: Deploy to GitHub Pages
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v3
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: ./output
           force_orphan: true
+
