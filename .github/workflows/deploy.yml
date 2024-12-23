@@ -3,12 +3,13 @@ name: Build and Deploy LaTeX
 on:
   push:
     branches:
-      - main
+      - main  # Trigger workflow on push to main branch
     paths:
-      - .github/workflows/deploy.yml
+      - .github/workflows/deploy.yml  # Trigger workflow when deploy.yml is modified
   release:
     types:
-      - created
+      - created  # Trigger workflow on new release creation
+  workflow_dispatch:  # Allow manual triggering of the workflow
 
 jobs:
   install-texlive:
@@ -70,4 +71,3 @@ jobs:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: ./output
           force_orphan: true
-
