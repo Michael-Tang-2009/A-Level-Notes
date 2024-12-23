@@ -1,0 +1,73 @@
+name: Build and Deploy LaTeX
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - .github/workflows/deploy.yml
+  release:
+    types:
+      - created
+
+jobs:
+  install-texlive:
+    name: Install TeX Live and latexmk
+    runs-on: ubuntu-latest
+    steps:
+      - name: Install TeX Live and latexmk
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y texlive-full latexmk
+
+      - name: Verify latexmk installation
+        run: |
+          which latexmk
+          latexmk --version
+
+  checkout-repository:
+    name: Checkout repository
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+  compile-latex:
+    name: Compile LaTeX
+    runs-on: ubuntu-latest
+    needs: install-texlive  # Ensure LaTeX is installed before compilation
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Compile LaTeX document
+        run: |
+          mkdir -p output
+          latexmk -pdf -interaction=nonstopmode -output-directory=output main.tex
+
+  upload-pdf:
+    name: Upload Compiled PDF
+    runs-on: ubuntu-latest
+    needs: compile-latex  # Ensure LaTeX compilation completes before uploading
+    steps:
+      - name: Upload compiled PDF
+        uses: actions/upload-artifact@v3
+        with:
+          name: compiled-pdf
+          path: output/*.pdf
+
+  deploy-pages:
+    name: Deploy to GitHub Pages
+    runs-on: ubuntu-latest
+    needs: compile-latex  # Ensure LaTeX compilation is done before deploying
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Deploy to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./output
+          force_orphan: true
+
