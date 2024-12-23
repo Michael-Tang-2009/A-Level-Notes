@@ -13,8 +13,6 @@ jobs:
   install-texlive:
     name: Install TeX Live and latexmk
     runs-on: ubuntu-latest
-    outputs:
-      texlive-path: ${{ steps.set-path.outputs.texlive-path }}
 
     steps:
       - name: Checkout repository
@@ -24,10 +22,6 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y texlive-full latexmk
-
-      - name: Set texlive PATH
-        id: set-path
-        run: echo "texlive-path=/usr/local/texlive/2024/bin/x86_64-linux" >> $GITHUB_ENV
 
       - name: Verify latexmk installation
         run: |
