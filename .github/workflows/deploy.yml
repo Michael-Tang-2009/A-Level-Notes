@@ -37,7 +37,7 @@ jobs:
       - name: Prepare public folder and copy all files
         run: |
           mkdir -p public
-          cp -r * public/
+          find . -maxdepth 1 -mindepth 1 -not -name public -exec cp -r {} public/ \;
 
       - name: Deploy to gh-pages branch
         uses: peaceiris/actions-gh-pages@v3
