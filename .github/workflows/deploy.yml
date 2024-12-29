@@ -3,6 +3,7 @@ name: Build and Deploy to GitHub Pages
 on:
   push:
     branches: [ "main" ]
+  workflow_dispatch:
 
 permissions:
   contents: write
@@ -17,28 +18,27 @@ jobs:
       - name: Update apt-get
         run: sudo apt-get update
 
-      - name: Install TeX Live (including XeLaTeX)
+      - name: Install TeX Live (including XeLaTeX and latexmk)
         run: |
           sudo apt-get install -y \
             texlive-xetex \
             texlive-fonts-recommended \
             texlive-latex-extra \
-            texlive-lang-chinese  # 若需要中文支持，可加上
+            texlive-lang-chinese \
+            latexmk
 
       - name: Install siunitx package
         run: sudo apt -y install texlive-science
 
-      - name: Compile with XeLaTeX
+      - name: Compile with latexmk (XeLaTeX)
         run: |
-          xelatex main.tex
-          # 若需要多次编译以生成目录、引用等信息，请重复调用 xelatex：
-          # xelatex main.tex
-          # xelatex main.tex
+          latexmk -xelatex -synctex=1 -interaction=nonstopmode main.tex
 
-      - name: Prepare public folder
+      - name: Prepare public folder and copy all files
         run: |
           mkdir -p public
-          mv main.pdf public/
+          find . -maxdepth 1 -mindepth 1 -not -name public -exec cp -r {} public/ \;
+
       - name: Deploy to gh-pages branch
         uses: peaceiris/actions-gh-pages@v3
         with:
