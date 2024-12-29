@@ -1,12 +1,19 @@
-\documentclass[12pt]{book}
+\documentclass[12pt, a4paper]{book}
 
-\usepackage{amsmath}   % for mathematical symbols and equations
-\usepackage{amsfonts}  % for math fonts
-\usepackage{amssymb}   % for extra symbols
-\usepackage{graphicx}  % for including images
-\usepackage{fancyhdr}  % for custom headers/footers
-\usepackage{hyperref}  % for hyperlinks
-\usepackage{tocbibind} % to include the bibliography in the table of contents
+\usepackage{amsmath}    % for mathematical symbols and equations
+\usepackage{amsfonts}   % for math fonts
+\usepackage{amssymb}    % for extra symbols
+\usepackage{graphicx}   % for including images
+\usepackage{fancyhdr}   % for custom headers/footers
+\usepackage{hyperref}   % for hyperlinks
+\usepackage{tocbibind}  % to include the bibliography in the table of contents
+\usepackage{epstopdf}   % to include .eps filesd
+\usepackage{float}      % for floating figures
+\usepackage{a4}         % for A4 paper size
+\usepackage{fontspec}   % for custom fonts
+\usepackage{xunicode}   % for unicode support
+\usepackage{xltxtra}    % for XeTeX extras
+\usepackage{xeCJK}      % for CJK support
 
 % Title and author information
 \title{A-Level Notes for Pearson Edexcel}
@@ -17,7 +24,10 @@
 \pagestyle{fancy}
 \fancyhead[L]{A-Level Notes}
 \fancyhead[C]{}
-\fancyhead[R]{\thepage}
+\setCJKmainfont[
+    Path = ./fonts/,
+    UprightFont = *
+]{STKAITI.TTF}
 
 \begin{document}
 
