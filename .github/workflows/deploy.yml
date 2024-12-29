@@ -5,75 +5,44 @@ on:
     branches: [ "main" ]
 
 jobs:
-  # ----------------------------
-  # 1) 安装依赖
-  # ----------------------------
-  install-deps:
+  build-deploy:
     runs-on: ubuntu-latest
     steps:
+      # 1) 检出代码
       - name: Check out repository
         uses: actions/checkout@v3
 
+      # 2) 更新 apt-get 缓存
       - name: Update apt-get
         run: sudo apt-get update
 
+      # 3) 安装 TeX Live + XeLaTeX 等依赖
       - name: Install TeX Live (including XeLaTeX)
         run: |
           sudo apt-get install -y \
             texlive-xetex \
             texlive-fonts-recommended \
             texlive-latex-extra \
-            texlive-lang-chinese  # 如果需要中文支持，可以加上
+            texlive-lang-chinese  # 若需要中文支持，可加上
 
-  # ----------------------------
-  # 2) 编译 PDF
-  # ----------------------------
-  compile-pdf:
-    # 只有依赖安装完后，才能编译
-    needs: install-deps
-    runs-on: ubuntu-latest
-    steps:
-      - name: Check out repository
-        uses: actions/checkout@v3
-
+      # 4) 编译 LaTeX 文件
       - name: Compile with XeLaTeX
         run: |
           xelatex main.tex
-          # 如果需要多次编译生成正确目录、索引等，可以多次调用 xelatex：
+          # 若需要多次编译以生成目录、引用等信息，请重复调用 xelatex：
           # xelatex main.tex
           # xelatex main.tex
 
-      - name: Upload PDF artifact
-        uses: actions/upload-artifact@v3
-        with:
-          name: compiled-pdf
-          path: main.pdf  # 若你的 PDF 命名或路径不同，请改这里
-
-  # ----------------------------
-  # 3) 部署到 gh-pages 分支
-  # ----------------------------
-  deploy:
-    # 只有编译完成后才能部署
-    needs: compile-pdf
-    runs-on: ubuntu-latest
-    steps:
-      - name: Check out repository
-        uses: actions/checkout@v3
-
-      - name: Download PDF artifact
-        uses: actions/download-artifact@v3
-        with:
-          name: compiled-pdf
-
+      # 5) 创建并移动编译输出到 public 目录 (为 gh-pages action 使用)
       - name: Prepare public folder
         run: |
           mkdir -p public
           mv main.pdf public/
 
-      # 使用第三方 action 来发布到 gh-pages 分支
+      # 6) 部署到 gh-pages 分支
       - name: Deploy to gh-pages branch
         uses: peaceiris/actions-gh-pages@v3
         with:
           personal_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: ./public
-          publish_branch: gh-pages  # 指定要部署的分支
+          publish_branch: gh-pages  # 部署到 gh-pages 分支
