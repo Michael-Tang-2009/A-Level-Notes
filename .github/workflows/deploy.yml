@@ -1,11 +1,13 @@
-name: Build and Deploy LaTeX PDF
+name: Build and Deploy to GitHub Pages
 
 on:
   push:
-    branches:
-      - main
+    branches: [ "main" ]
 
 jobs:
+  # ----------------------------
+  # 1) 安装依赖
+  # ----------------------------
   install-deps:
     runs-on: ubuntu-latest
     steps:
@@ -19,11 +21,15 @@ jobs:
         run: |
           sudo apt-get install -y \
             texlive-xetex \
-            texlive-latex-extra \
             texlive-fonts-recommended \
-            texlive-lang-chinese  # 如果需要中文支持
+            texlive-latex-extra \
+            texlive-lang-chinese  # 如果需要中文支持，可以加上
 
+  # ----------------------------
+  # 2) 编译 PDF
+  # ----------------------------
   compile-pdf:
+    # 只有依赖安装完后，才能编译
     needs: install-deps
     runs-on: ubuntu-latest
     steps:
@@ -33,17 +39,21 @@ jobs:
       - name: Compile with XeLaTeX
         run: |
           xelatex main.tex
-          # 如果需要多次编译生成正确目录、索引等，可以重复执行 xelatex。
+          # 如果需要多次编译生成正确目录、索引等，可以多次调用 xelatex：
           # xelatex main.tex
           # xelatex main.tex
 
       - name: Upload PDF artifact
         uses: actions/upload-artifact@v3
         with:
-          name: Compiled-PDF
-          path: main.pdf
+          name: compiled-pdf
+          path: main.pdf  # 若你的 PDF 命名或路径不同，请改这里
 
+  # ----------------------------
+  # 3) 部署到 gh-pages 分支
+  # ----------------------------
   deploy:
+    # 只有编译完成后才能部署
     needs: compile-pdf
     runs-on: ubuntu-latest
     steps:
@@ -53,17 +63,17 @@ jobs:
       - name: Download PDF artifact
         uses: actions/download-artifact@v3
         with:
-          name: Compiled-PDF
+          name: compiled-pdf
 
-      - name: Create a directory for GH Pages
+      - name: Prepare public folder
         run: |
           mkdir -p public
           mv main.pdf public/
 
-      - name: Deploy to GitHub Pages
+      # 使用第三方 action 来发布到 gh-pages 分支
+      - name: Deploy to gh-pages branch
         uses: peaceiris/actions-gh-pages@v3
         with:
           personal_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: ./public
-          publish_branch: gh-pages
-          # cname: example.com
+          publish_branch: gh-pages  # 指定要部署的分支
