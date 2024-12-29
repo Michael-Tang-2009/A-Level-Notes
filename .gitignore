@@ -1,0 +1,58 @@
+# LaTeX auxiliary and temporary files
+*.aux
+*.bbl
+*.bcf
+*.blg
+*.idx
+*.ilg
+*.ind
+*.lof
+*.lot
+*.out
+*.toc
+*.acn
+*.acr
+*.alg
+*.glg
+*.glo
+*.gls
+*.ist
+*.fls
+*.log
+*.fdb_latexmk
+*.synctex.gz
+*.run.xml
+*.nav
+*.snm
+*.vrb
+*.xdv
+
+# Intermediate and backup files
+*.bak
+*.backup
+*.tmp
+*.swp
+*.synctex
+*.dvi
+
+# PDF files (if you don't want to commit them)
+*.pdf
+
+# OS-generated files
+.DS_Store      # macOS
+Thumbs.db      # Windows
+ehthumbs.db    # Windows
+Desktop.ini    # Windows
+
+# Editor/IDE-specific files
+.vscode/       # Visual Studio Code settings
+.idea/         # IntelliJ IDEA settings
+*.sublime-*    # Sublime Text files
+
+# Compiled files from other TeX engines
+*.ps
+*.eps
+
+# Output directory for LaTeX builds (if applicable)
+output/
+_build/
