@@ -4,19 +4,19 @@ on:
   push:
     branches: [ "main" ]
 
+permissions:
+  contents: write
+
 jobs:
   build-deploy:
     runs-on: ubuntu-latest
     steps:
-      # 1) 检出代码
       - name: Check out repository
         uses: actions/checkout@v3
 
-      # 2) 更新 apt-get 缓存
       - name: Update apt-get
         run: sudo apt-get update
 
-      # 3) 安装 TeX Live + XeLaTeX 等依赖
       - name: Install TeX Live (including XeLaTeX)
         run: |
           sudo apt-get install -y \
@@ -25,7 +25,6 @@ jobs:
             texlive-latex-extra \
             texlive-lang-chinese  # 若需要中文支持，可加上
 
-      # 4) 编译 LaTeX 文件
       - name: Compile with XeLaTeX
         run: |
           xelatex main.tex
@@ -33,16 +32,13 @@ jobs:
           # xelatex main.tex
           # xelatex main.tex
 
-      # 5) 创建并移动编译输出到 public 目录 (为 gh-pages action 使用)
       - name: Prepare public folder
         run: |
           mkdir -p public
           mv main.pdf public/
-
-      # 6) 部署到 gh-pages 分支
       - name: Deploy to gh-pages branch
         uses: peaceiris/actions-gh-pages@v3
         with:
           personal_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: ./public
-          publish_branch: gh-pages  # 部署到 gh-pages 分支
+          publish_branch: gh-pages
