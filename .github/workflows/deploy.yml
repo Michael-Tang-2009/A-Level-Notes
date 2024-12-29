@@ -4,17 +4,20 @@ on:
   push:
     branches:
       - main
-    paths:
-      - .github/workflows/deploy.yml
   release:
     types:
       - created
+  workflow_dispatch:  # Allow manual triggering
 
 jobs:
   install-texlive:
     name: Install TeX Live and latexmk
     runs-on: ubuntu-latest
+
     steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
       - name: Install TeX Live and latexmk
         run: |
           sudo apt-get update
@@ -22,33 +25,39 @@ jobs:
 
       - name: Verify latexmk installation
         run: |
-          which latexmk
-          latexmk --version
+          which latexmk || echo "latexmk not found"
+          latexmk --version || echo "latexmk version could not be fetched"
 
-  checkout-repository:
-    name: Checkout repository
+  create-output-dir:
+    name: Create Output Directory
     runs-on: ubuntu-latest
+    needs: install-texlive  # Ensure TeX Live is installed first
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
 
+      - name: Create output directory
+        run: mkdir -p output
+
   compile-latex:
-    name: Compile LaTeX
+    name: Compile LaTeX Document
     runs-on: ubuntu-latest
-    needs: install-texlive  # Ensure LaTeX is installed before compilation
+    needs: [install-texlive, create-output-dir]  # Compile only after texlive is installed and output dir exists
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
 
       - name: Compile LaTeX document
         run: |
-          mkdir -p output
           latexmk -pdf -interaction=nonstopmode -output-directory=output main.tex
 
   upload-pdf:
     name: Upload Compiled PDF
     runs-on: ubuntu-latest
-    needs: compile-latex  # Ensure LaTeX compilation completes before uploading
+    needs: compile-latex  # Wait for LaTeX compilation to complete
+
     steps:
       - name: Upload compiled PDF
         uses: actions/upload-artifact@v3
@@ -59,7 +68,8 @@ jobs:
   deploy-pages:
     name: Deploy to GitHub Pages
     runs-on: ubuntu-latest
-    needs: compile-latex  # Ensure LaTeX compilation is done before deploying
+    needs: compile-latex  # Ensure LaTeX compilation is finished
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
@@ -70,4 +80,3 @@ jobs:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: ./output
           force_orphan: true
-
