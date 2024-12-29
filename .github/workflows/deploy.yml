@@ -25,6 +25,9 @@ jobs:
             texlive-latex-extra \
             texlive-lang-chinese  # 若需要中文支持，可加上
 
+      - name: Install siunitx package
+        run: sudo apt -y install texlive-science
+
       - name: Compile with XeLaTeX
         run: |
           xelatex main.tex
