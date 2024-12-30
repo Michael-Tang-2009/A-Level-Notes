@@ -1,24 +1,70 @@
-name: Build and Deploy to GitHub Pages
+name: Build and Deploy to GitHub Pages and Weekly Archive
 
+# Trigger conditions: on push, schedule, and manual dispatch
 on:
   push:
     branches: [ "main" ]
-  workflow_dispatch:
+    paths:
+      - deploy.yaml # Trigger when deploy.yaml changes
+      - '**/*'      # Trigger for changes in all files
+  schedule:
+    # Schedule to run at 0:00 AM every Monday (UTC time)
+    - cron: "0 0 * * 1"
+  workflow_dispatch: # Manual trigger
 
 permissions:
   contents: write
 
 jobs:
-  build-deploy:
+  # Job to check whether archiving is required for the current week or manually triggered
+  check-archive-status:
     runs-on: ubuntu-latest
+    outputs:
+      should_archive: ${{ steps.check.outputs.should_archive }}
     steps:
-      - name: Check out repository
+      - name: Check out the repository
         uses: actions/checkout@v3
 
-      - name: Update apt-get
+      - name: Determine if archive should be executed
+        id: check
+        run: |
+          # If workflow is manually triggered, always execute archive
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+            echo "Manually triggered workflow, forcing archive."
+            echo "should_archive=true" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+
+          # Check if deploy.yaml was modified in the last commit
+          DEPLOY_CHANGED=$(git diff HEAD~1 --name-only | grep -c '^deploy.yaml$' || echo 0)
+          if [ "$DEPLOY_CHANGED" -gt 0 ]; then
+            echo "Deploy.yaml file changed, triggering archive."
+            echo "should_archive=true" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+
+          # Check if an archive was already created this week
+          LAST_ARCHIVE_DATE=$(git log origin/weekly-achieve --pretty=format:"%cs" | head -1 || echo "1970-01-01")
+          CURRENT_WEEK=$(date +%Y-%U)
+          LAST_ARCHIVE_WEEK=$(date -d "$LAST_ARCHIVE_DATE" +%Y-%U || echo "1970-01")
+          if [[ "$CURRENT_WEEK" != "$LAST_ARCHIVE_WEEK" ]]; then
+            echo "should_archive=true" >> $GITHUB_OUTPUT
+          else
+            echo "should_archive=false" >> $GITHUB_OUTPUT
+
+  # Job to build and compile the LaTeX document
+  build:
+    if: ${{ needs.check-archive-status.outputs.should_archive == 'true' }}
+    needs: check-archive-status
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out the repository
+        uses: actions/checkout@v3
+
+      - name: Update apt-get package lists
         run: sudo apt-get update
 
-      - name: Install TeX Live (including XeLaTeX and latexmk)
+      - name: Install TeX Live and dependencies
         run: |
           sudo apt-get install -y \
             texlive-xetex \
@@ -30,11 +76,11 @@ jobs:
       - name: Install siunitx package
         run: sudo apt -y install texlive-science
 
-      - name: Compile with latexmk (XeLaTeX)
+      - name: Compile LaTeX document using latexmk
         run: |
           latexmk -xelatex -synctex=1 -interaction=nonstopmode main.tex
 
-      - name: Prepare public folder and copy main.pdf
+      - name: Copy compiled PDF to public folder
         run: |
           mkdir -p public
           mv main.pdf public/
@@ -45,3 +91,91 @@ jobs:
           personal_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: ./public
           publish_branch: gh-pages
+
+  # Job to prepare the archive files
+  prepare-archive:
+    if: ${{ needs.check-archive-status.outputs.should_archive == 'true' }}
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out the repository
+        uses: actions/checkout@v3
+
+      - name: Create archive directory and compress files
+        run: |
+          mkdir -p archive
+          mv main.pdf archive/
+          zip -r source.zip . -x archive/**\* .git/**\* # Compress source files excluding archive and .git
+
+      - name: Upload artifact for hash calculation
+        uses: actions/upload-artifact@v3
+        with:
+          name: archive-files
+          path: |
+            archive/main.pdf
+            source.zip
+
+  # Job to calculate MD5 and SHA256 hashes for the archive
+  calculate-hash:
+    if: ${{ needs.check-archive-status.outputs.should_archive == 'true' }}
+    needs: prepare-archive
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download archive artifact
+        uses: actions/download-artifact@v3
+        with:
+          name: archive-files
+
+      - name: Calculate MD5 and SHA256 hashes
+        id: hash
+        run: |
+          MD5=$(md5sum source.zip | awk '{ print $1 }')
+          HASH=$(sha256sum source.zip | awk '{ print $1 }')
+          echo "MD5=$MD5" >> $GITHUB_ENV
+          echo "HASH=$HASH" >> $GITHUB_ENV
+
+  # Job to generate README.md and update weekly-achieve branch
+  update-readme:
+    if: ${{ needs.check-archive-status.outputs.should_archive == 'true' }}
+    needs: [prepare-archive, calculate-hash]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out the repository
+        uses: actions/checkout@v3
+
+      - name: Download archive artifact
+        uses: actions/download-artifact@v3
+        with:
+          name: archive-files
+
+      - name: Generate README.md
+        env:
+          DATE: ${{ github.event.date || 'N/A' }}
+          MD5: ${{ env.MD5 }}
+          HASH: ${{ env.HASH }}
+          ARCHIVE_TIME: $(date)
+          LAST_COMMIT: $(git log -1 --pretty=%B)
+          COMMIT_ACCOUNT: $(git log -1 --pretty=%cn)
+        run: |
+          echo "# [${{ env.DATE }}] Weekly Achieve" > README.md
+          echo "Compile Time: $(date)" >> README.md
+          echo "GitHub Page Deploy Time: $(date)" >> README.md
+          echo "Archive Zip File MD5: ${{ env.MD5 }}" >> README.md
+          echo "Archive Zip File Hash: ${{ env.HASH }}" >> README.md
+          echo "Archive Time: ${{ env.ARCHIVE_TIME }}" >> README.md
+          echo "The Last Commit Before Archive: ${{ env.LAST_COMMIT }}" >> README.md
+          echo "Commit Account: ${{ env.COMMIT_ACCOUNT }}" >> README.md
+          git add README.md
+          git commit -m "Add README.md with archive details"
+
+      - name: Push updates to weekly-achieve branch
+        run: |
+          git fetch origin weekly-achieve
+          git checkout weekly-achieve || git checkout --orphan weekly-achieve
+          rm -rf *
+          mv README.md source.zip archive/ .
+          mkdir -p compile
+          mv archive/* compile/
+          git add .
+          git commit -m "Weekly archive update"
+          git push origin weekly-achieve --force
