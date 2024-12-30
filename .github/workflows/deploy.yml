@@ -1,22 +1,19 @@
 name: Build and Deploy to GitHub Pages and Weekly Archive
 
-# Trigger conditions: on push, schedule, and manual dispatch
 on:
   push:
     branches: [ "main" ]
     paths:
-      - deploy.yaml # Trigger when deploy.yaml changes
-      - '**/*'      # Trigger for changes in all files
+      - deploy.yaml
+      - '**/*'
   schedule:
-    # Schedule to run at 0:00 AM every Monday (UTC time)
     - cron: "0 0 * * 1"
-  workflow_dispatch: # Manual trigger
+  workflow_dispatch:
 
 permissions:
   contents: write
 
 jobs:
-  # Job to check whether archiving is required for the current week or manually triggered
   check-archive-status:
     runs-on: ubuntu-latest
     outputs:
@@ -28,23 +25,33 @@ jobs:
       - name: Determine if archive should be executed
         id: check
         run: |
-          # If workflow is manually triggered, always execute archive
+          # If manually triggered, force archive
           if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
             echo "Manually triggered workflow, forcing archive."
             echo "should_archive=true" >> $GITHUB_OUTPUT
             exit 0
           fi
 
-          # Check if deploy.yaml was modified in the last commit
-          DEPLOY_CHANGED=$(git diff HEAD~1 --name-only | grep -c '^deploy.yaml$' || echo 0)
-          if [ "$DEPLOY_CHANGED" -gt 0 ]; then
+          # Check if deploy.yaml was modified
+          if git rev-parse HEAD~1 >/dev/null 2>&1; then
+            DEPLOY_CHANGED=$(git diff HEAD~1 --name-only | grep -c '^deploy.yaml$' || echo 0)
+          else
+            DEPLOY_CHANGED=0
+          fi
+
+          if [[ "$DEPLOY_CHANGED" -gt 0 ]]; then
             echo "Deploy.yaml file changed, triggering archive."
             echo "should_archive=true" >> $GITHUB_OUTPUT
             exit 0
           fi
 
-          # Check if an archive was already created this week
-          LAST_ARCHIVE_DATE=$(git log origin/weekly-achieve --pretty=format:"%cs" | head -1 || echo "1970-01-01")
+          # Check if the archive was already created this week
+          if git ls-remote --exit-code origin weekly-achieve >/dev/null 2>&1; then
+            LAST_ARCHIVE_DATE=$(git log origin/weekly-achieve --pretty=format:"%cs" | head -1 || echo "1970-01-01")
+          else
+            LAST_ARCHIVE_DATE="1970-01-01"
+          fi
+
           CURRENT_WEEK=$(date +%Y-%U)
           LAST_ARCHIVE_WEEK=$(date -d "$LAST_ARCHIVE_DATE" +%Y-%U || echo "1970-01")
           if [[ "$CURRENT_WEEK" != "$LAST_ARCHIVE_WEEK" ]]; then
@@ -52,7 +59,6 @@ jobs:
           else
             echo "should_archive=false" >> $GITHUB_OUTPUT
 
-  # Job to build and compile the LaTeX document
   build:
     if: ${{ needs.check-archive-status.outputs.should_archive == 'true' }}
     needs: check-archive-status
@@ -92,7 +98,6 @@ jobs:
           publish_dir: ./public
           publish_branch: gh-pages
 
-  # Job to prepare the archive files
   prepare-archive:
     if: ${{ needs.check-archive-status.outputs.should_archive == 'true' }}
     needs: build
@@ -105,7 +110,7 @@ jobs:
         run: |
           mkdir -p archive
           mv main.pdf archive/
-          zip -r source.zip . -x archive/**\* .git/**\* # Compress source files excluding archive and .git
+          zip -r source.zip . -x archive/**\* .git/**\*
 
       - name: Upload artifact for hash calculation
         uses: actions/upload-artifact@v3
@@ -115,7 +120,6 @@ jobs:
             archive/main.pdf
             source.zip
 
-  # Job to calculate MD5 and SHA256 hashes for the archive
   calculate-hash:
     if: ${{ needs.check-archive-status.outputs.should_archive == 'true' }}
     needs: prepare-archive
@@ -134,7 +138,6 @@ jobs:
           echo "MD5=$MD5" >> $GITHUB_ENV
           echo "HASH=$HASH" >> $GITHUB_ENV
 
-  # Job to generate README.md and update weekly-achieve branch
   update-readme:
     if: ${{ needs.check-archive-status.outputs.should_archive == 'true' }}
     needs: [prepare-archive, calculate-hash]
