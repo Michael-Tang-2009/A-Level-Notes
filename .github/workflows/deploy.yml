@@ -58,6 +58,7 @@ jobs:
             echo "should_archive=true" >> $GITHUB_OUTPUT
           else
             echo "should_archive=false" >> $GITHUB_OUTPUT
+          fi
 
   build:
     if: ${{ needs.check-archive-status.outputs.should_archive == 'true' }}
