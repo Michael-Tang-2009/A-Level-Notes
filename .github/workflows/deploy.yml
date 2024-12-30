@@ -188,9 +188,9 @@ jobs:
           git add README.md
           git commit -m "Add README.md with archive details"
 
-      - name: Push updates to weekly-achieve branch
+      - name: Push updates to weekly-archive branch
         run: |
-          git fetch origin weekly-achieve
+          git fetch origin weekly-archive
           git checkout weekly-achieve || git checkout --orphan weekly-achieve
           rm -rf *
           mv README.md source.zip archive/ .
