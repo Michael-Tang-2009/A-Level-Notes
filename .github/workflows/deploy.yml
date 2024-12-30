@@ -100,26 +100,37 @@ jobs:
           publish_branch: gh-pages
 
   prepare-archive:
-    if: ${{ needs.check-archive-status.outputs.should_archive == 'true' }}
-    needs: build
-    runs-on: ubuntu-latest
-    steps:
-      - name: Check out the repository
-        uses: actions/checkout@v3
+  if: ${{ needs.check-archive-status.outputs.should_archive == 'true' }}
+  needs: build
+  runs-on: ubuntu-latest
+  steps:
+    - name: Check out the repository
+      uses: actions/checkout@v3
 
-      - name: Create archive directory and compress files
-        run: |
-          mkdir -p archive
-          mv main.pdf archive/
-          zip -r source.zip . -x archive/**\* .git/**\*
+    - name: Fetch main.pdf from gh-pages branch if not found locally
+      run: |
+        mkdir -p archive
+        if [[ ! -f main.pdf ]]; then
+          echo "main.pdf not found locally. Attempting to fetch from gh-pages branch."
+          git fetch origin gh-pages
+          git checkout origin/gh-pages -- main.pdf || {
+            echo "Error: Unable to fetch main.pdf from gh-pages branch."
+            exit 1
+          }
+        fi
+        mv main.pdf archive/
 
-      - name: Upload artifact for hash calculation
-        uses: actions/upload-artifact@v3
-        with:
-          name: archive-files
-          path: |
-            archive/main.pdf
-            source.zip
+    - name: Compress source files into source.zip
+      run: |
+        zip -r source.zip . -x archive/**\* .git/**\*
+
+    - name: Upload artifact for hash calculation
+      uses: actions/upload-artifact@v3
+      with:
+        name: archive-files
+        path: |
+          archive/main.pdf
+          source.zip
 
   calculate-hash:
     if: ${{ needs.check-archive-status.outputs.should_archive == 'true' }}
