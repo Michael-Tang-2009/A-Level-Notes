@@ -107,10 +107,28 @@ jobs:
       - name: Check out the repository
         uses: actions/checkout@v3
 
-      - name: Create archive directory and compress files
+      - name: Create archive directory and get files
         run: |
           mkdir -p archive
-          mv main.pdf archive/
+          if [[ ! -f main.pdf ]]; then
+            echo "Fetching main.pdf from gh-pages branch."
+            git fetch origin gh-pages
+            git checkout origin/gh-pages -- main.pdf || {
+              echo "Error: Unable to fetch main.pdf from gh-pages branch."
+              exit 1
+            }
+            mv main.pdf archive/main.pdf
+          fi
+
+          echo "Fetching other files from main branch."
+          git fetch origin main
+          git checkout origin/main -- README.md source.zip || {
+            echo "Error: Unable to fetch README.md or source.zip from main branch."
+            exit 1
+          }
+
+      - name: Compress source files into source.zip
+        run: |
           zip -r source.zip . -x archive/**\* .git/**\*
 
       - name: Upload artifact for hash calculation
