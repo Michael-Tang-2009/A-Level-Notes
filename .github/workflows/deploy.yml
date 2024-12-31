@@ -122,10 +122,12 @@ jobs:
 
           echo "Fetching other files from main branch."
           git fetch origin main
-          git checkout origin/main -- README.md source.zip || {
-            echo "Error: Unable to fetch README.md or source.zip from main branch."
-            exit 1
-          }
+          git checkout origin/main -- README.md || echo "README.md not found in main branch. Proceeding without it."
+
+          if [[ ! -f source.zip ]]; then
+            echo "source.zip not found in main branch. Creating an empty source.zip."
+            zip -r source.zip archive/
+          fi
 
       - name: Compress source files into source.zip
         run: |
