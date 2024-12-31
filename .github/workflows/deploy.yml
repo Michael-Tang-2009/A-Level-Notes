@@ -177,32 +177,15 @@ jobs:
           git config --global user.email "actions@github.com"
           git config --global user.name "GitHub Actions"
 
-      - name: Initialize or check out weekly-achieve branch
+      - name: Ensure archive-output directory exists
         run: |
-          # Fetch the weekly-achieve branch if it exists, or create it as an orphan
-          git fetch origin weekly-achieve || echo "No remote weekly-achieve branch exists yet."
-          git checkout weekly-achieve || git checkout --orphan weekly-achieve
-          ls -l
+          mkdir -p ./archive-output
 
-      - name: Ensure files exist before moving
+      - name: Move generated files to archive-output
         run: |
-          # Check if source.zip and archive/ exist
-          if [[ ! -f source.zip ]]; then
-            echo "ERROR: source.zip not found."
-            exit 1
-          fi
-          if [[ ! -d archive ]]; then
-            echo "ERROR: archive/ directory not found."
-            exit 1
-          fi
-          ls -l source.zip archive/
-
-      - name: Move generated files to branch
-        run: |
-          # Move files to the correct location in the repository
+          mv ARCHIVE.md ./archive-output/ARCHIVE.md
           mv source.zip ./archive-output/source.zip
           mv archive/ ./archive-output/compile/
-          ls -l ./archive-output
 
       - name: Commit and push updates to weekly-achieve branch
         run: |
