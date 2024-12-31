@@ -223,7 +223,7 @@ jobs:
       - name: Move generated files to branch
         run: |
           # Move files to the correct location in the repository
-          mv README.md .
+          mv ARCHIVE.md .
           mv source.zip .
           mv archive/ compile/
           ls -l
