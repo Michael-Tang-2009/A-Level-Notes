@@ -3,11 +3,6 @@ name: Build and Deploy to GitHub Pages and Weekly Archive
 on:
   push:
     branches: [ "main" ]
-    paths:
-      - deploy.yaml
-      - '**/*'
-  schedule:
-    - cron: "0 0 * * 1"
   workflow_dispatch:
 
 permissions:
@@ -98,97 +93,3 @@ jobs:
           personal_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: ./public
           publish_branch: gh-pages
-
-  prepare-archive:
-    if: ${{ needs.check-archive-status.outputs.should_archive == 'true' }}
-    needs: build
-    runs-on: ubuntu-latest
-    steps:
-      - name: Check out the repository
-        uses: actions/checkout@v3
-
-      - name: Create archive directory and get files
-        run: |
-          mkdir -p archive
-          if [[ ! -f main.pdf ]]; then
-            echo "Fetching main.pdf from gh-pages branch."
-            git fetch origin gh-pages
-            git checkout origin/gh-pages -- main.pdf || {
-              echo "Error: Unable to fetch main.pdf from gh-pages branch."
-              exit 1
-            }
-            mv main.pdf archive/main.pdf
-          fi
-
-          echo "Fetching other files from main branch."
-          git fetch origin main
-          git checkout origin/main -- README.md || echo "README.md not found in main branch. Proceeding without it."
-
-          if [[ ! -f source.zip ]]; then
-            echo "source.zip not found in main branch. Creating an empty source.zip."
-            zip -r source.zip archive/
-          fi
-
-      - name: Compress source files into source.zip
-        run: |
-          zip -r source.zip . -x archive/**\* .git/**\*
-
-      - name: Upload artifact for hash calculation
-        uses: actions/upload-artifact@v3
-        with:
-          name: archive-files
-          path: |
-            archive/main.pdf
-            source.zip
-
-  calculate-hash:
-    if: ${{ needs.check-archive-status.outputs.should_archive == 'true' }}
-    needs: prepare-archive
-    runs-on: ubuntu-latest
-    steps:
-      - name: Download archive artifact
-        uses: actions/download-artifact@v3
-        with:
-          name: archive-files
-
-      - name: Calculate MD5 and SHA256 hashes
-        id: hash
-        run: |
-          MD5=$(md5sum source.zip | awk '{ print $1 }')
-          HASH=$(sha256sum source.zip | awk '{ print $1 }')
-          echo "MD5=$MD5" >> $GITHUB_ENV
-          echo "HASH=$HASH" >> $GITHUB_ENV
-
-  update-readme:
-    if: ${{ needs.check-archive-status.outputs.should_archive == 'true' }}
-    needs: [prepare-archive, calculate-hash]
-    runs-on: ubuntu-latest
-    steps:
-      - name: Check out the repository
-        uses: actions/checkout@v3
-
-      - name: Download archive artifact
-        uses: actions/download-artifact@v3
-        with:
-          name: archive-files
-
-      - name: Configure Git user identity
-        run: |
-          git config --global user.email "actions@github.com"
-          git config --global user.name "GitHub Actions"
-
-      - name: Ensure archive-output directory exists
-        run: |
-          mkdir -p ./archive-output
-
-      - name: Move generated files to archive-output
-        run: |
-          mv ARCHIVE.md ./archive-output/ARCHIVE.md
-          mv source.zip ./archive-output/source.zip
-          mv archive/ ./archive-output/compile/
-
-      - name: Commit and push updates to weekly-achieve branch
-        run: |
-          git add ./archive-output/*
-          git commit -m "Weekly archive update" || echo "No changes to commit."
-          git push origin weekly-achieve --force
