@@ -177,7 +177,7 @@ jobs:
           git config --global user.email "actions@github.com"
           git config --global user.name "GitHub Actions"
 
-      - name: Generate README.md
+      - name: Generate ARCHIVE.md
         env:
           DATE: ${{ github.event.date || 'N/A' }}
           MD5: ${{ env.MD5 }}
@@ -186,15 +186,15 @@ jobs:
           LAST_COMMIT: $(git log -1 --pretty=%B)
           COMMIT_ACCOUNT: $(git log -1 --pretty=%cn)
         run: |
-          echo "# [${{ env.DATE }}] Weekly Achieve" > README.md
-          echo "Compile Time: $(date)" >> README.md
-          echo "GitHub Page Deploy Time: $(date)" >> README.md
-          echo "Archive Zip File MD5: ${{ env.MD5 }}" >> README.md
-          echo "Archive Zip File Hash: ${{ env.HASH }}" >> README.md
-          echo "Archive Time: ${{ env.ARCHIVE_TIME }}" >> README.md
-          echo "The Last Commit Before Archive: ${{ env.LAST_COMMIT }}" >> README.md
-          echo "Commit Account: ${{ env.COMMIT_ACCOUNT }}" >> README.md
-          ls -l README.md source.zip archive/
+          echo "# [${{ env.DATE }}] Weekly Achieve" > ARCHIVE.md
+          echo "Compile Time: $(date)" >> ARCHIVE.md
+          echo "GitHub Page Deploy Time: $(date)" >> ARCHIVE.md
+          echo "Archive Zip File MD5: ${{ env.MD5 }}" >> ARCHIVE.md
+          echo "Archive Zip File Hash: ${{ env.HASH }}" >> ARCHIVE.md
+          echo "Archive Time: ${{ env.ARCHIVE_TIME }}" >> ARCHIVE.md
+          echo "The Last Commit Before Archive: ${{ env.LAST_COMMIT }}" >> ARCHIVE.md
+          echo "Commit Account: ${{ env.COMMIT_ACCOUNT }}" >> ARCHIVE.md
+          ls -l ARCHIVE.md source.zip archive/
 
       - name: Initialize or check out weekly-achieve branch
         run: |
@@ -205,9 +205,9 @@ jobs:
 
       - name: Ensure files exist before moving
         run: |
-          # Check if README.md, source.zip, and archive/ exist
-          if [[ ! -f README.md ]]; then
-            echo "ERROR: README.md not found."
+          # Check if ARCHIVE.md, source.zip, and archive/ exist
+          if [[ ! -f ARCHIVE.md ]]; then
+            echo "ERROR: ARCHIVE.md not found."
             exit 1
           fi
           if [[ ! -f source.zip ]]; then
@@ -218,7 +218,7 @@ jobs:
             echo "ERROR: archive/ directory not found."
             exit 1
           fi
-          ls -l README.md source.zip archive/
+          ls -l ARCHIVE.md source.zip archive/
 
       - name: Move generated files to branch
         run: |
