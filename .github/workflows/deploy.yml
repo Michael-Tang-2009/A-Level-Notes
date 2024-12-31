@@ -177,25 +177,6 @@ jobs:
           git config --global user.email "actions@github.com"
           git config --global user.name "GitHub Actions"
 
-      - name: Generate ARCHIVE.md
-        env:
-          DATE: ${{ github.event.date || 'N/A' }}
-          MD5: ${{ env.MD5 }}
-          HASH: ${{ env.HASH }}
-          ARCHIVE_TIME: $(date)
-          LAST_COMMIT: $(git log -1 --pretty=%B)
-          COMMIT_ACCOUNT: $(git log -1 --pretty=%cn)
-        run: |
-          echo "# [${{ env.DATE }}] Weekly Achieve" > ARCHIVE.md
-          echo "Compile Time: $(date)" >> ARCHIVE.md
-          echo "GitHub Page Deploy Time: $(date)" >> ARCHIVE.md
-          echo "Archive Zip File MD5: ${{ env.MD5 }}" >> ARCHIVE.md
-          echo "Archive Zip File Hash: ${{ env.HASH }}" >> ARCHIVE.md
-          echo "Archive Time: ${{ env.ARCHIVE_TIME }}" >> ARCHIVE.md
-          echo "The Last Commit Before Archive: ${{ env.LAST_COMMIT }}" >> ARCHIVE.md
-          echo "Commit Account: ${{ env.COMMIT_ACCOUNT }}" >> ARCHIVE.md
-          ls -l ARCHIVE.md source.zip archive/
-
       - name: Initialize or check out weekly-achieve branch
         run: |
           # Fetch the weekly-achieve branch if it exists, or create it as an orphan
@@ -205,11 +186,7 @@ jobs:
 
       - name: Ensure files exist before moving
         run: |
-          # Check if ARCHIVE.md, source.zip, and archive/ exist
-          if [[ ! -f ARCHIVE.md ]]; then
-            echo "ERROR: ARCHIVE.md not found."
-            exit 1
-          fi
+          # Check if source.zip and archive/ exist
           if [[ ! -f source.zip ]]; then
             echo "ERROR: source.zip not found."
             exit 1
@@ -218,18 +195,17 @@ jobs:
             echo "ERROR: archive/ directory not found."
             exit 1
           fi
-          ls -l ARCHIVE.md source.zip archive/
+          ls -l source.zip archive/
 
       - name: Move generated files to branch
         run: |
           # Move files to the correct location in the repository
-          mv ARCHIVE.md .
-          mv source.zip .
-          mv archive/ compile/
-          ls -l
+          mv source.zip ./archive-output/source.zip
+          mv archive/ ./archive-output/compile/
+          ls -l ./archive-output
 
       - name: Commit and push updates to weekly-achieve branch
         run: |
-          git add .
+          git add ./archive-output/*
           git commit -m "Weekly archive update" || echo "No changes to commit."
           git push origin weekly-achieve --force
