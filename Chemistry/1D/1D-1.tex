@@ -1,0 +1,85 @@
+% ===============================================
+%                 Chapter 1D.1
+%               Empirical Formulae
+%             Created by Michael Tang
+%                  2025.01.05
+% ===============================================
+
+\subsubsection{1D.1 Empirical Formulae}
+\paragraph{The Definition of \underline{Empirical Formulae} (实验式)}
+\begin{itemize}
+    \item An empirical formula represents the simplest whole-number ratio of atoms of each element in a compound.
+    \item It is determined from experimental data such as masses or percentage compositions.
+\end{itemize}
+
+\paragraph{Steps to Calculate Empirical Formula}
+\begin{itemize}
+    \item[1.] Divide the mass or percentage composition of each element by its relative atomic mass ($A_r$).
+    \item[2.] Calculate the ratio of the elements by dividing all results by the smallest number obtained.
+    \item[3.] If necessary, round to the nearest whole number or multiply to achieve whole numbers
+\end{itemize}
+
+\paragraph{Example Using Masses}
+Determining the formula of copper oxide (\ce{CuO}):
+\begin{itemize}
+    \item Mass of copper: 3.43 g, mass of oxygen: 0.85 g
+    \item Relative atomic masses: $\ce{Cu} = 63.5$, $\ce{O} = 16.0$.
+    \item Steps:
+    \begin{itemize}
+        \item[1.] Divide masses by $A_r$:
+        \begin{equation}
+            \frac{3.43}{63.5} = 0.0540, \quad \frac{0.85}{16.0} = 0.0531
+        \end{equation}
+        \item[2.] Simplify ratio
+        \begin{equation}
+            \frac{0.0540}{0.0531} \approx 1:1
+        \end{equation}
+        \item[3.] Empirical formula: \ce{CuO}.
+    \end{itemize}
+\end{itemize}
+
+\paragraph{Example Using Percentage Composition}
+Compound with $\ce{C} = 38.4 \%, \quad \ce{H} = 4.8 \%, \quad \ce{Cl} = 56.8 \%$:
+\begin{itemize}
+    \item Relative atomic masses: $\ce{C} = 12.0$, $\ce{H} = 1.0$, $\ce{Cl} = 35.5$.
+    \item Steps:
+    \begin{itemize}
+        \item[1.] Divide percentages by $A_r$:
+        \begin{equation}
+            \frac{38.4}{12.0} = 3.2, \quad \frac{4.8}{1.0} = 4.8, \quad \frac{56.8}{35.5} = 1.6
+        \end{equation}
+        \item[2.] Simplify ratio:
+        \begin{equation}
+            3.2 : 4.8 : 1.6 \approx 2 : 3 : 1
+        \end{equation}
+        \item[3.] Empirical formula: $\ce{C2H3Cl}$.
+    \end{itemize}
+\end{itemize}
+
+\paragraph{Handling Oxygen as a Missing Value}
+Example: $\ce{Na} = 29.1 \%, \quad \ce{S} = 40.5 \%$, oxygen not provided.
+\begin{itemize}
+    \item Calculate oxygen by subtraction:
+    \begin{equation}
+        \text{Oxygen Percentage} = 100 - \left(29.1 + 40.5\right) = 30.4 \%
+    \end{equation}
+    \item Determine ratio:
+    \begin{equation}
+        \frac{29.1}{23.0} = 1.27, \quad \frac{40.5}{32.1} = 1.26, \quad \frac{30.4}{16.0} = 1.90
+    \end{equation}
+    \item Simplify ratio:
+    \begin{equation}
+        1.27 : 1.26 : 1.90 \approx 1 : 1 : 2
+    \end{equation}
+    \item Empirical formula: $\ce{Na2S2O3}$.
+\end{itemize}
+
+\paragraph{Using \underline{Combustion Analysis} (燃烧分析)}
+Determine the mass of \ce{C}, \ce{H}, and \ce{O} from the masses of \ce{CO2} and \ce{H2O} produced.
+\begin{equation}
+    \begin{split}
+        \ce{C} &= \frac{\text{Mass of } \ce{CO2}}{44.0} \times 12.0 \\
+        \ce{H} &= \frac{\text{Mass of } \ce{H2O}}{18.0} \times 2.0 \\
+        \ce{O} &= \text{Total mass} - \left(\ce{C} + \ce{H}\right)
+    \end{split}
+\end{equation}
