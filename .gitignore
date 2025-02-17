@@ -56,3 +56,4 @@ Desktop.ini    # Windows
 # Output directory for LaTeX builds (if applicable)
 output/
 _build/
+main.synctex(busy)
